@@ -3,6 +3,7 @@ package com.lunatech.keycloak.mappers.google;
 import com.github.slugify.Slugify;
 import org.keycloak.Config;
 import org.keycloak.broker.oidc.OIDCIdentityProviderFactory;
+import org.keycloak.social.google.GoogleIdentityProviderFactory;
 import org.keycloak.broker.provider.AbstractIdentityProviderMapper;
 import org.keycloak.broker.provider.BrokeredIdentityContext;
 import org.keycloak.models.*;
@@ -65,7 +66,10 @@ public class GoogleGroupsIdentityProviderMapper extends AbstractIdentityProvider
 
     @Override
     public String[] getCompatibleProviders() {
-        return new String[]{ OIDCIdentityProviderFactory.PROVIDER_ID };
+        return new String[]{
+            OIDCIdentityProviderFactory.PROVIDER_ID,
+            GoogleIdentityProviderFactory.PROVIDER_ID
+        };
     }
 
     @Override

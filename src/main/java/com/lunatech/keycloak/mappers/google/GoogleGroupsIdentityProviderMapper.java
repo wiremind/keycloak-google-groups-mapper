@@ -94,16 +94,16 @@ public class GoogleGroupsIdentityProviderMapper extends AbstractIdentityProvider
 
     @Override
     public void importNewUser(KeycloakSession keycloakSession, RealmModel realmModel, UserModel userModel, IdentityProviderMapperModel identityProviderMapperModel, BrokeredIdentityContext brokeredIdentityContext) {
-        updateUserGroups(realmModel, userModel, identityProviderMapperModel);
+        updateUserGroups(keycloakSession, realmModel, userModel, identityProviderMapperModel);
     }
 
     @Override
     public void updateBrokeredUser(KeycloakSession keycloakSession, RealmModel realmModel, UserModel userModel, IdentityProviderMapperModel identityProviderMapperModel, BrokeredIdentityContext brokeredIdentityContext) {
-        updateUserGroups(realmModel, userModel, identityProviderMapperModel);
+        updateUserGroups(keycloakSession, realmModel, userModel, identityProviderMapperModel);
     }
 
-    private void updateUserGroups(RealmModel realm, UserModel user, IdentityProviderMapperModel mapperModel) {
-        GroupModel parentGroup = getParentGroup(realm, mapperModel);
+    private void updateUserGroups(KeycloakSession keycloakSession, RealmModel realm, UserModel user, IdentityProviderMapperModel mapperModel) {
+        GroupModel parentGroup = getParentGroup(keycloakSession, realm, mapperModel);
 
         List<String> userGroupNames = googleClient.getUsergroupNames(user.getEmail());
 
@@ -144,12 +144,12 @@ public class GoogleGroupsIdentityProviderMapper extends AbstractIdentityProvider
         return "Adds the user to all groups that the user is a member of in Google";
     }
 
-    public GroupModel getParentGroup(RealmModel realm, IdentityProviderMapperModel mapperModel) {
+    public GroupModel getParentGroup(KeycloakSession keycloakSession, RealmModel realm, IdentityProviderMapperModel mapperModel) {
         String groupPath = mapperModel.getConfig().get(MAPPER_MODEL_KEY_PARENT_GROUP);
         if(groupPath == null) {
             throw new RuntimeException("No parent group configured.");
         }
-        return KeycloakModelUtils.findGroupByPath(realm, groupPath);
+        return KeycloakModelUtils.findGroupByPath(keycloakSession, realm, groupPath);
     }
 
 }

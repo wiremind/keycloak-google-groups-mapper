@@ -4,7 +4,7 @@
 
     <groupId>com.lunatech.keycloak</groupId>
     <artifactId>keycloak-google-groups-mapper</artifactId>
-    <version>0.4</version>
+    <version>0.5</version>
 
     <name>Keycloak Google Groups Mapper</name>
     <description>An Identity Provider Mapper that fetches Google Groups membership information of a user that uses Google as Identity Provider and syncs it to Keycloak groups.</description>
@@ -12,9 +12,10 @@
     <inceptionYear>2022</inceptionYear>
 
     <properties>
-        <maven.compiler.source>11</maven.compiler.source>
-        <maven.compiler.target>11</maven.compiler.target>
-        <keycloak.version>19.0.1</keycloak.version>
+        <java.version>17</java.version>
+        <maven.compiler.source>17</maven.compiler.source>
+        <maven.compiler.target>17</maven.compiler.target>
+        <keycloak.version>23.0.0</keycloak.version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <distribution.name>${project.artifactId}</distribution.name>
     </properties>
@@ -96,7 +97,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-assembly-plugin</artifactId>
-                <version>3.1.1</version>
+                <version>3.7.1</version>
 
                 <configuration>
                     <descriptorRefs>
@@ -118,7 +119,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-release-plugin</artifactId>
-                <version>3.0.0-M6</version>
+                <version>3.0.1</version>
                 <configuration>
                     <tagNameFormat>v@{project.version}</tagNameFormat>
                 </configuration>
@@ -127,7 +128,7 @@
             <plugin>
                 <groupId>org.jreleaser</groupId>
                 <artifactId>jreleaser-maven-plugin</artifactId>
-                <version>1.1.0</version>
+                <version>1.12.0</version>
                 <configuration>
                     <jreleaser>
                         <release>

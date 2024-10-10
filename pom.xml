@@ -4,7 +4,7 @@
 
     <groupId>com.lunatech.keycloak</groupId>
     <artifactId>keycloak-google-groups-mapper</artifactId>
-    <version>0.5</version>
+    <version>0.6</version>
 
     <name>Keycloak Google Groups Mapper</name>
     <description>An Identity Provider Mapper that fetches Google Groups membership information of a user that uses Google as Identity Provider and syncs it to Keycloak groups.</description>
@@ -12,10 +12,10 @@
     <inceptionYear>2022</inceptionYear>
 
     <properties>
-        <java.version>17</java.version>
-        <maven.compiler.source>17</maven.compiler.source>
-        <maven.compiler.target>17</maven.compiler.target>
-        <keycloak.version>23.0.0</keycloak.version>
+        <java.version>21</java.version>
+        <maven.compiler.source>21</maven.compiler.source>
+        <maven.compiler.target>21</maven.compiler.target>
+        <keycloak.version>24.0.0</keycloak.version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <distribution.name>${project.artifactId}</distribution.name>
     </properties>
@@ -29,7 +29,7 @@
     </licenses>
 
     <scm>
-        <developerConnection>scm:git:ssh://git@github.com/lunatech-labs/lunatech-keycloak-google-groups-mapper.git</developerConnection>
+        <developerConnection>scm:git:ssh://git@github.com/wiremind/lunatech-keycloak-google-groups-mapper.git</developerConnection>
 
       <tag>HEAD</tag>
   </scm>
@@ -64,29 +64,29 @@
         <dependency>
             <groupId>com.google.apis</groupId>
             <artifactId>google-api-services-admin-directory</artifactId>
-            <version>directory_v1-rev20220621-1.32.1</version>
+            <version>directory_v1-rev20240924-2.0.0</version>
         </dependency>
         <dependency>
             <groupId>com.google.http-client</groupId>
             <artifactId>google-http-client-jackson2</artifactId>
-            <version>1.42.2</version>
+            <version>1.45.0</version>
         </dependency>
         <dependency>
             <groupId>com.google.auth</groupId>
             <artifactId>google-auth-library-oauth2-http</artifactId>
-            <version>1.8.0</version>
+            <version>1.28.0</version>
         </dependency>
 
         <dependency>
             <groupId>com.github.slugify</groupId>
             <artifactId>slugify</artifactId>
-            <version>3.0.2</version>
+            <version>3.0.7</version>
         </dependency>
 
         <dependency>
             <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter</artifactId>
-            <version>5.9.0</version>
+            <version>5.11.2</version>
             <scope>test</scope>
         </dependency>
 
@@ -119,7 +119,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-release-plugin</artifactId>
-                <version>3.0.1</version>
+                <version>3.1.1</version>
                 <configuration>
                     <tagNameFormat>v@{project.version}</tagNameFormat>
                 </configuration>
@@ -128,12 +128,12 @@
             <plugin>
                 <groupId>org.jreleaser</groupId>
                 <artifactId>jreleaser-maven-plugin</artifactId>
-                <version>1.12.0</version>
+                <version>1.14.0</version>
                 <configuration>
                     <jreleaser>
                         <release>
                             <github>
-                                <owner>lunatech-labs</owner>
+                                <owner>wiremind</owner>
                                 <name>lunatech-keycloak-google-groups-mapper</name>
                                 <overwrite>true</overwrite>
                             </github>
@@ -158,7 +158,7 @@
         <repository>
             <id>github</id>
             <name>GitHub Packages</name>
-            <url>https://maven.pkg.github.com/lunatech-labs/lunatech-keycloak-google-groups-mapper</url>
+            <url>https://maven.pkg.github.com/wiremind/lunatech-keycloak-google-groups-mapper</url>
         </repository>
     </distributionManagement>
 

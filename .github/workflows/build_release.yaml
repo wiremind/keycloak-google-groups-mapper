@@ -1,9 +1,14 @@
-name: Release JAR
+name: Build and release JAR
 
 on:
   push:
+    branches:
+      - main
     tags:
       - '*'
+  pull_request:
+    branches:
+      - main
 
 jobs:
   build:
@@ -15,13 +20,13 @@ jobs:
           - 5000:5000
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
 
       - name: Set up QEMU
-        uses: docker/setup-qemu-action@v2
+        uses: docker/setup-qemu-action@v3
 
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v2
+        uses: docker/setup-buildx-action@v3
         with:
           driver-opts: network=host
 
@@ -33,13 +38,22 @@ jobs:
           tags: localhost:5000/name/app:latest
 
       - id: extract
-        uses: shrink/actions-docker-extract@v1
+        uses: shrink/actions-docker-extract@v3
         with:
           image: localhost:5000/name/app:latest
           path: /release/.
 
+      - name: upload build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: build
+          path: ${{ steps.extract.outputs.destination }}/*.jar
+          if-no-files-found: error
+          retention-days: 14
+
       - name: Create release
         uses: actions/create-release@v1
+        if: startsWith(github.ref, 'refs/tags/')
         id: create_release
         with:
           draft: false
@@ -50,6 +64,7 @@ jobs:
           GITHUB_TOKEN: ${{ github.token }}
 
       - name: Upload release artifact
+        if: startsWith(github.ref, 'refs/tags/')
         uses: actions/upload-release-asset@v1
         env:
           GITHUB_TOKEN: ${{ github.token }}

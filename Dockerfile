@@ -1,4 +1,4 @@
-FROM maven:3.9.9-eclipse-temurin-21 AS build
+FROM maven:3.9.13-eclipse-temurin-21 AS build
 
 WORKDIR /home/app/src
 
@@ -7,7 +7,7 @@ RUN mvn clean verify
 
 RUN mvn -q -Dexec.executable=echo -Dexec.args='${project.artifactId}-${project.version}-jar-with-dependencies.jar' --non-recursive exec:exec > /home/app/src/release-fullname.txt
 
-FROM alpine:3
+FROM alpine:3.23.3
 
 WORKDIR /release
 

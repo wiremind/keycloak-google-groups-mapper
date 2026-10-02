@@ -25,31 +25,31 @@ jobs:
           - 5000:5000
     steps:
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
 
       - name: Set up QEMU
-        uses: docker/setup-qemu-action@v4
+        uses: docker/setup-qemu-action@99012661954931238ded8c8b007157a8430204e1 # v4.4.0
 
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v4
+        uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
         with:
           driver-opts: network=host
 
       - name: Build and push to local registry
-        uses: docker/build-push-action@v7
+        uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
         with:
           context: .
           push: true
           tags: localhost:5000/name/app:latest
 
       - id: extract
-        uses: shrink/actions-docker-extract@v3.1.0
+        uses: shrink/actions-docker-extract@04c17c51a5b9fd93b7aed2e05e86c8fe2d90ee52 # v3.1.0
         with:
           image: localhost:5000/name/app:latest
           path: /release/.
 
       - name: upload build artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: build
           path: ${{ steps.extract.outputs.destination }}/*.jar
@@ -58,7 +58,7 @@ jobs:
 
       - name: Create release and upload artifact
         if: startsWith(github.ref, 'refs/tags/')
-        uses: softprops/action-gh-release@v2.5.0
+        uses: softprops/action-gh-release@a06a81a03ee405af7f2048a818ed3f03bbf83c7b # v2.5.0
         with:
           draft: false
           prerelease: false

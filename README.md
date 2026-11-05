@@ -10,6 +10,8 @@ This identity provider mapper requires the following config in `keycloak.conf`:
 
 Additionally, it uses the _default_ authentication mechanism of the Google client libraries, which essentially means that you want to set an environment variable `GOOGLE_APPLICATION_CREDENTIALS` to the location of the JSON file you can download for a configured service client in the Google Developer console.
 
+The mapper looks up the groups of the Google account that logs in, by its account ID (the OIDC `sub`). It does not use the email of the Keycloak user, because that email can differ from the Google account.
+
 ### Mapper settings
 
 | Setting | Default | Description |

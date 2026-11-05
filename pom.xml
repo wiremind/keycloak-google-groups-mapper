@@ -8,16 +8,15 @@
 
     <name>Keycloak Google Groups Mapper</name>
     <description>An Identity Provider Mapper that fetches Google Groups membership information of a user that uses Google as Identity Provider and syncs it to Keycloak groups.</description>
-    <url>https://github.com/lunatech-labs/lunatech-keycloak-google-groups-mapper</url>
+    <url>https://github.com/wiremind/keycloak-google-groups-mapper</url>
     <inceptionYear>2022</inceptionYear>
 
     <properties>
         <java.version>21</java.version>
         <maven.compiler.source>21</maven.compiler.source>
         <maven.compiler.target>21</maven.compiler.target>
-        <keycloak.version>26.5.0</keycloak.version>
+        <keycloak.version>26.8.1</keycloak.version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <distribution.name>${project.artifactId}</distribution.name>
     </properties>
 
     <licenses>
@@ -29,10 +28,10 @@
     </licenses>
 
     <scm>
-        <developerConnection>scm:git:ssh://git@github.com/wiremind/lunatech-keycloak-google-groups-mapper.git</developerConnection>
-
-      <tag>HEAD</tag>
-  </scm>
+        <url>https://github.com/wiremind/keycloak-google-groups-mapper</url>
+        <connection>scm:git:https://github.com/wiremind/keycloak-google-groups-mapper.git</connection>
+        <developerConnection>scm:git:ssh://git@github.com/wiremind/keycloak-google-groups-mapper.git</developerConnection>
+    </scm>
 
     <developers>
         <developer>
@@ -64,35 +63,75 @@
         <dependency>
             <groupId>com.google.apis</groupId>
             <artifactId>google-api-services-admin-directory</artifactId>
-            <version>directory_v1-rev20250527-2.0.0</version>
+            <version>directory_v1-rev20260914-2.9.2</version>
         </dependency>
         <dependency>
             <groupId>com.google.http-client</groupId>
             <artifactId>google-http-client-jackson2</artifactId>
-            <version>1.47.0</version>
+            <version>2.2.0</version>
         </dependency>
         <dependency>
             <groupId>com.google.auth</groupId>
             <artifactId>google-auth-library-oauth2-http</artifactId>
-            <version>1.35.0</version>
+            <version>1.55.0</version>
         </dependency>
 
         <dependency>
             <groupId>com.github.slugify</groupId>
             <artifactId>slugify</artifactId>
-            <version>3.0.7</version>
+            <version>4.0.1</version>
         </dependency>
 
         <dependency>
             <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter</artifactId>
-            <version>6.0.3</version>
+            <version>6.1.3</version>
             <scope>test</scope>
         </dependency>
 
     </dependencies>
 
     <build>
+        <pluginManagement>
+            <plugins>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-clean-plugin</artifactId>
+                    <version>3.5.0</version>
+                </plugin>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-resources-plugin</artifactId>
+                    <version>3.5.0</version>
+                </plugin>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-compiler-plugin</artifactId>
+                    <version>3.16.0</version>
+                </plugin>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-surefire-plugin</artifactId>
+                    <version>3.6.1</version>
+                </plugin>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-jar-plugin</artifactId>
+                    <version>3.5.1</version>
+                </plugin>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-install-plugin</artifactId>
+                    <version>3.2.0</version>
+                </plugin>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-deploy-plugin</artifactId>
+                    <version>3.2.0</version>
+                </plugin>
+            </plugins>
+        </pluginManagement>
+
         <plugins>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
@@ -115,51 +154,7 @@
                     </execution>
                 </executions>
             </plugin>
-
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-release-plugin</artifactId>
-                <version>3.3.1</version>
-                <configuration>
-                    <tagNameFormat>v@{project.version}</tagNameFormat>
-                </configuration>
-            </plugin>
-
-            <plugin>
-                <groupId>org.jreleaser</groupId>
-                <artifactId>jreleaser-maven-plugin</artifactId>
-                <version>1.23.0</version>
-                <configuration>
-                    <jreleaser>
-                        <release>
-                            <github>
-                                <owner>wiremind</owner>
-                                <name>lunatech-keycloak-google-groups-mapper</name>
-                                <overwrite>true</overwrite>
-                            </github>
-                        </release>
-                        <distributions>
-                            <jar>
-                                <type>SINGLE_JAR</type>
-                                <artifacts>
-                                    <artifact>
-                                        <path>target/${project.artifactId}-${project.version}-jar-with-dependencies.jar</path>
-                                    </artifact>
-                                </artifacts>
-                            </jar>
-                        </distributions>
-                    </jreleaser>
-                </configuration>
-            </plugin>
         </plugins>
     </build>
-
-    <distributionManagement>
-        <repository>
-            <id>github</id>
-            <name>GitHub Packages</name>
-            <url>https://maven.pkg.github.com/wiremind/lunatech-keycloak-google-groups-mapper</url>
-        </repository>
-    </distributionManagement>
 
 </project>

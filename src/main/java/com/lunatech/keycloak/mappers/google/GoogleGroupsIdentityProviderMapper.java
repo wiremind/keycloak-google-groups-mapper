@@ -66,8 +66,11 @@ public class GoogleGroupsIdentityProviderMapper extends AbstractIdentityProvider
         property = new ProviderConfigProperty();
         property.setName(MAPPER_MODEL_KEY_EMAIL_FILTER);
         property.setLabel("Group email filter");
-        property.setHelpText("Optional regular expression. When set, only Google groups whose email fully matches it are synced "
-                + "(for example ^[a-z0-9-]+-admin@example\\.com$). Users are removed from Keycloak groups that no longer match.");
+        property.setHelpText("Optional regular expression, case-insensitive. When set, only Google groups whose email fully matches it are synced "
+                + "(for example ^[a-z0-9-]+-admin@example\\.com$). Users are removed from Keycloak groups that no longer match. "
+                + "With 'name', the Keycloak name still comes from the display name: the filter limits which groups are synced, "
+                + "but an allowed group renamed to the display name of another group still maps to that group. Use 'email' to prevent this. "
+                + "An invalid expression makes every Google login fail: test on a staging realm first.");
         property.setType(ProviderConfigProperty.STRING_TYPE);
         configProperties.add(property);
     }

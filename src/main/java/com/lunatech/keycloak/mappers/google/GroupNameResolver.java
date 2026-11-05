@@ -51,8 +51,10 @@ final class GroupNameResolver {
     /**
      * @param source       where the Keycloak group name comes from
      * @param emailDomain  optional; in EMAIL mode, groups in this domain are named by the local part only
-     *                     (cayzn-admin@example.com becomes cayzn-admin). Groups in other domains keep their full email.
-     * @param emailFilter  optional regex; when set, only groups whose (lowercased) email fully matches it are synced
+     *                     (team-admin@example.com becomes team-admin). Groups in other domains keep their full email.
+     * @param emailFilter  optional regex, matched case-insensitively; when set, only groups whose email fully matches
+     *                     it are synced. With NAME the Keycloak name still comes from the display name, so the filter
+     *                     limits which groups are synced but does not prevent two of them from sharing a name.
      */
     GroupNameResolver(Source source, String emailDomain, String emailFilter) {
         this.source = source;
@@ -60,7 +62,7 @@ final class GroupNameResolver {
                 ? null
                 : "@" + emailDomain.trim().toLowerCase(Locale.ROOT).replaceFirst("^@", "");
         try {
-            this.emailFilter = isBlank(emailFilter) ? null : Pattern.compile(emailFilter.trim());
+            this.emailFilter = isBlank(emailFilter) ? null : Pattern.compile(emailFilter.trim(), Pattern.CASE_INSENSITIVE);
         } catch (PatternSyntaxException e) {
             throw new IllegalArgumentException("Invalid group email filter regex: " + emailFilter, e);
         }

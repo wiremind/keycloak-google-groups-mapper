@@ -98,6 +98,17 @@ class GroupNameResolverTest {
     }
 
     @Test
+    void emailFilterIsCaseInsensitive() {
+        GroupNameResolver resolver = new GroupNameResolver(GroupNameResolver.Source.EMAIL, "example.com", "^Team-Admin@Example\\.COM$");
+
+        Set<String> names = resolve(resolver,
+                group("Team admin", "team-admin@example.com"),
+                group("Other", "other@example.com"));
+
+        assertEquals(Set.of("team-admin"), names);
+    }
+
+    @Test
     void emailFilterAlsoAppliesToNameSource() {
         GroupNameResolver resolver = new GroupNameResolver(GroupNameResolver.Source.NAME, null, "^team-admin@example\\.com$");
 

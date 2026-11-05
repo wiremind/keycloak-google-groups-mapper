@@ -34,7 +34,14 @@ Old, now empty, groups are not deleted automatically.
 
 ## Building
 
-    mvn clean package
+    mvn clean verify
+
+The build writes `target/keycloak-google-groups-mapper-<version>-jar-with-dependencies.jar`.
+Without a local Java 21, build in a container:
+
+    docker run --rm -v "$PWD":/src -w /src maven:3-eclipse-temurin-21 mvn clean verify
+
+Each pull request also uploads this JAR as a workflow artifact.
 
 ## Running locally
 
@@ -46,13 +53,18 @@ And then check out http://localhost:8080/. You can login with admin/admin.
 
 ## Releasing
 
-We use the `maven-release-plugin` to publish to Github Packages, and then JReleaser to create a 'release' on GitHub.
+[release-please](https://github.com/googleapis/release-please) makes the releases from the
+[Conventional Commits](https://www.conventionalcommits.org/) on `main`:
 
-Typically, you would run the following:
+1. A merge to `main` with a `feat:` or `fix:` commit opens or updates a release pull request.
+   This pull request sets the next version in `pom.xml` and adds the changes to `CHANGELOG.md`.
+2. A merge of the release pull request creates the tag `<version>` and the GitHub release.
+3. The `Release` workflow then builds the JAR from the tag and attaches two assets to the release:
+   `keycloak-google-groups-mapper-<version>-jar-with-dependencies.jar` and its `.sha256` file.
 
-    mvn release:prepare
-    mvn release:perform
-    git checkout <<the release version>>
-    JRELEASER_GITHUB_TOKEN=<<A GH Token>> mvn jreleaser:release
+`feat:` increments the minor version and `fix:` increments the patch version.
+Before 1.0.0, a breaking change (`feat!:`) also increments the minor version.
+`chore:`, `ci:`, `docs:` and `test:` commits do not cause a release.
 
-This is not really a great flow; properly combining these into one jrelease config would probably be better.
+Renovate keeps the Maven dependencies, the Maven plugins and the GitHub Actions up to date.
+Its pull requests use `fix(deps):` for the dependencies, so each merge causes a release.

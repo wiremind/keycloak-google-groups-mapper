@@ -11,10 +11,13 @@ import com.google.auth.http.HttpCredentialsAdapter;
 import com.google.auth.oauth2.GoogleCredentials;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.Collectors;
 
 class GoogleClient {
+
+    /** Maximum page size allowed by the Directory API groups.list endpoint. */
+    static final int MAX_RESULTS = 200;
 
     private final Directory directory;
 
@@ -32,13 +35,44 @@ class GoogleClient {
         return new HttpCredentialsAdapter(credentials);
     }
 
-    public List<String> getUsergroupNames(String userKey) {
+    /**
+     * Returns every group the user is a direct member of, following all result pages.
+     */
+    public List<Group> getUserGroups(String userKey) {
         try {
-            Groups groups = directory.groups().list().setUserKey(userKey).execute();
-            return groups.getGroups().stream().map(Group::getName).collect(Collectors.toList());
-        } catch(IOException e) {
+            return fetchAllPages(pageToken -> directory.groups().list()
+                    .setUserKey(userKey)
+                    .setMaxResults(MAX_RESULTS)
+                    .setPageToken(pageToken)
+                    .execute());
+        } catch (IOException e) {
             throw new RuntimeException(e);
         }
+    }
+
+    @FunctionalInterface
+    interface PageFetcher {
+        Groups fetch(String pageToken) throws IOException;
+    }
+
+    /**
+     * Calls {@code fetcher} until no {@code nextPageToken} is returned. A page without groups
+     * (for example a user who is in no group at all) yields an empty list instead of failing.
+     */
+    static List<Group> fetchAllPages(PageFetcher fetcher) throws IOException {
+        List<Group> result = new ArrayList<>();
+        String pageToken = null;
+        do {
+            Groups page = fetcher.fetch(pageToken);
+            if (page == null) {
+                break;
+            }
+            if (page.getGroups() != null) {
+                result.addAll(page.getGroups());
+            }
+            pageToken = page.getNextPageToken();
+        } while (pageToken != null && !pageToken.isEmpty());
+        return result;
     }
 
 }

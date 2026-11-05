@@ -10,6 +10,42 @@ This identity provider mapper requires the following config in `keycloak.conf`:
 
 Additionally, it uses the _default_ authentication mechanism of the Google client libraries, which essentially means that you want to set an environment variable `GOOGLE_APPLICATION_CREDENTIALS` to the location of the JSON file you can download for a configured service client in the Google Developer console.
 
+### Mapper settings
+
+| Setting | Default | Description |
+|---|---|---|
+| Parent Group | _(required)_ | All imported groups are created under this Keycloak group. |
+| Group name source | `name` | `name`: slugified display name (legacy). `email`: the group email address. |
+| Group email domain | _(empty)_ | With `email`: groups in this domain are named by the part before the `@` (`team-admin@example.com` → `team-admin`). Groups in other domains keep their full email. |
+| Group email filter | _(empty)_ | Regular expression, case-insensitive; when set, only groups whose email fully matches are synced. |
+
+An invalid filter or an unknown *Group name source* value makes every Google login fail. Test the mapper settings on a
+staging realm first.
+
+**Prefer `email`.** Google group display names are not unique and can be edited by group managers, so with `name`
+two different Google groups (for example `Team Admin` and `TEAM ADMIN`) end up in the same Keycloak group, together
+with any roles mapped to it. Email addresses are unique.
+
+With `name`, the filter still checks the email but the Keycloak name comes from the display name. It limits which
+groups are synced, but an allowed group renamed to the display name of another group still maps to that group.
+
+**Switching an existing setup from `name` to `email`** renames Keycloak groups whose email differs from the slugified
+display name. On their next login users leave the old group and join the new one. Before switching:
+
+1. List the subgroups of the parent group and the roles or client mappings attached to them.
+2. Compare each Google group's slugified display name with its email (or local part, with *Group email domain* set).
+3. Recreate the role mappings on the groups whose name changes, then switch the setting.
+
+Old, now empty, groups are not deleted automatically and keep their role mappings. If a Google group later gets an
+email whose local part equals an old group name, its members get these roles. After the switch, delete the old groups
+or remove their role mappings.
+
+### Known limits
+
+* Membership syncs only when the user logs in through Google. A user removed from a Google group keeps the Keycloak
+  group, and their open sessions, until their next Google login. Sign out their sessions when removing them from a
+  privileged group.
+
 ## Building
 
     mvn clean verify

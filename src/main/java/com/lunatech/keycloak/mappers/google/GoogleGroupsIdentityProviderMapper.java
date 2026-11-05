@@ -1,6 +1,6 @@
 package com.lunatech.keycloak.mappers.google;
 
-import com.github.slugify.Slugify;
+import org.jboss.logging.Logger;
 import org.keycloak.Config;
 import org.keycloak.broker.oidc.OIDCIdentityProviderFactory;
 import org.keycloak.social.google.GoogleIdentityProviderFactory;
@@ -17,17 +17,21 @@ import java.util.stream.Collectors;
 import static java.util.function.Function.identity;
 
 public class GoogleGroupsIdentityProviderMapper extends AbstractIdentityProviderMapper {
+    private static final Logger LOG = Logger.getLogger(GoogleGroupsIdentityProviderMapper.class);
+
     protected static final List<ProviderConfigProperty> configProperties = new ArrayList<>();
     private static final String CONFIG_KEY_SERVICE_ACCOUNT_USER = "service-account-user";
     private static final String CONFIG_KEY_APPLICATION_NAME = "application-name";
 
     private static final String MAPPER_MODEL_KEY_PARENT_GROUP = "parentGroup";
+    static final String MAPPER_MODEL_KEY_GROUP_NAME_SOURCE = "groupNameSource";
+    static final String MAPPER_MODEL_KEY_EMAIL_DOMAIN = "groupEmailDomain";
+    static final String MAPPER_MODEL_KEY_EMAIL_FILTER = "groupEmailFilter";
     public static final String PROVIDER_ID = "google-groups-idp-mapper";
 
     private static final Set<IdentityProviderSyncMode> IDENTITY_PROVIDER_SYNC_MODES = new HashSet<>(Arrays.asList(IdentityProviderSyncMode.IMPORT, IdentityProviderSyncMode.FORCE));
 
     private GoogleClient googleClient;
-    private Slugify slugify;
 
     static {
         ProviderConfigProperty property;
@@ -36,6 +40,38 @@ public class GoogleGroupsIdentityProviderMapper extends AbstractIdentityProvider
         property.setLabel("Parent Group");
         property.setHelpText("All imported groups will be created under this parent group.");
         property.setType(ProviderConfigProperty.GROUP_TYPE);
+        configProperties.add(property);
+
+        property = new ProviderConfigProperty();
+        property.setName(MAPPER_MODEL_KEY_GROUP_NAME_SOURCE);
+        property.setLabel("Group name source");
+        property.setHelpText("How Keycloak group names are derived from Google groups. "
+                + "'name' (default, legacy): slugified display name. Display names are not unique and can be edited by group managers, "
+                + "so different Google groups can be merged into the same Keycloak group. "
+                + "'email': the group email address (unique). Recommended. "
+                + "Changing this renames the Keycloak groups: move role mappings to the new groups first.");
+        property.setType(ProviderConfigProperty.LIST_TYPE);
+        property.setOptions(List.of("name", "email"));
+        property.setDefaultValue("name");
+        configProperties.add(property);
+
+        property = new ProviderConfigProperty();
+        property.setName(MAPPER_MODEL_KEY_EMAIL_DOMAIN);
+        property.setLabel("Group email domain");
+        property.setHelpText("Optional, only used with 'email'. Groups in this domain are named by the part before the @ "
+                + "(team-admin@example.com becomes team-admin). Groups in any other domain keep their full email address.");
+        property.setType(ProviderConfigProperty.STRING_TYPE);
+        configProperties.add(property);
+
+        property = new ProviderConfigProperty();
+        property.setName(MAPPER_MODEL_KEY_EMAIL_FILTER);
+        property.setLabel("Group email filter");
+        property.setHelpText("Optional regular expression, case-insensitive. When set, only Google groups whose email fully matches it are synced "
+                + "(for example ^[a-z0-9-]+-admin@example\\.com$). Users are removed from Keycloak groups that no longer match. "
+                + "With 'name', the Keycloak name still comes from the display name: the filter limits which groups are synced, "
+                + "but an allowed group renamed to the display name of another group still maps to that group. Use 'email' to prevent this. "
+                + "An invalid expression makes every Google login fail: test on a staging realm first.");
+        property.setType(ProviderConfigProperty.STRING_TYPE);
         configProperties.add(property);
     }
 
@@ -55,8 +91,6 @@ public class GoogleGroupsIdentityProviderMapper extends AbstractIdentityProvider
         } catch(IOException e) {
             throw new RuntimeException(e);
         }
-
-        this.slugify = Slugify.builder().build();
     }
 
     @Override
@@ -102,25 +136,32 @@ public class GoogleGroupsIdentityProviderMapper extends AbstractIdentityProvider
         updateUserGroups(keycloakSession, realmModel, userModel, identityProviderMapperModel);
     }
 
+    static GroupNameResolver resolverFor(IdentityProviderMapperModel mapperModel) {
+        Map<String, String> config = mapperModel.getConfig();
+        return new GroupNameResolver(
+                GroupNameResolver.Source.fromConfig(config.get(MAPPER_MODEL_KEY_GROUP_NAME_SOURCE)),
+                config.get(MAPPER_MODEL_KEY_EMAIL_DOMAIN),
+                config.get(MAPPER_MODEL_KEY_EMAIL_FILTER));
+    }
+
     private void updateUserGroups(KeycloakSession keycloakSession, RealmModel realm, UserModel user, IdentityProviderMapperModel mapperModel) {
         GroupModel parentGroup = getParentGroup(keycloakSession, realm, mapperModel);
+        GroupNameResolver resolver = resolverFor(mapperModel);
 
-        List<String> userGroupNames = googleClient.getUsergroupNames(user.getEmail());
-
-        Set<String> targetGroups = userGroupNames.stream()
-                .map(slugify::slugify)
-                .collect(Collectors.toSet());
+        Set<String> targetGroups = resolver.resolve(googleClient.getUserGroups(user.getEmail()));
 
         HashSet<String> groupsToJoin = new HashSet<>(targetGroups);
-        user.getGroupsStream().forEach(currentGroup -> {
-            if(parentGroup.equals(currentGroup.getParent())) {
-                if(targetGroups.contains(currentGroup.getName())) {
-                    groupsToJoin.remove(currentGroup.getName());
-                } else {
-                    user.leaveGroup(currentGroup);
-                }
+        List<GroupModel> currentGroups = user.getGroupsStream()
+                .filter(currentGroup -> parentGroup.equals(currentGroup.getParent()))
+                .collect(Collectors.toList());
+        for (GroupModel currentGroup : currentGroups) {
+            if(targetGroups.contains(currentGroup.getName())) {
+                groupsToJoin.remove(currentGroup.getName());
+            } else {
+                LOG.infof("Removing user %s from group %s", user.getUsername(), currentGroup.getName());
+                user.leaveGroup(currentGroup);
             }
-        });
+        }
 
         if(!groupsToJoin.isEmpty()) {
             Map<String, GroupModel> existingGroups = parentGroup.getSubGroupsStream()
@@ -129,8 +170,10 @@ public class GoogleGroupsIdentityProviderMapper extends AbstractIdentityProvider
             groupsToJoin.forEach(groupName -> {
                 GroupModel group = existingGroups.get(groupName);
                 if(group == null) {
+                    LOG.infof("Creating group %s under %s", groupName, parentGroup.getName());
                     group = realm.createGroup(groupName, parentGroup);
                 }
+                LOG.infof("Adding user %s to group %s", user.getUsername(), groupName);
                 user.joinGroup(group);
             });
         }
@@ -149,7 +192,11 @@ public class GoogleGroupsIdentityProviderMapper extends AbstractIdentityProvider
         if(groupPath == null) {
             throw new RuntimeException("No parent group configured.");
         }
-        return KeycloakModelUtils.findGroupByPath(keycloakSession, realm, groupPath);
+        GroupModel parentGroup = KeycloakModelUtils.findGroupByPath(keycloakSession, realm, groupPath);
+        if(parentGroup == null) {
+            throw new RuntimeException("Parent group not found: " + groupPath);
+        }
+        return parentGroup;
     }
 
 }

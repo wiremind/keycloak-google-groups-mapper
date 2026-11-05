@@ -128,12 +128,24 @@ public class GoogleGroupsIdentityProviderMapper extends AbstractIdentityProvider
 
     @Override
     public void importNewUser(KeycloakSession keycloakSession, RealmModel realmModel, UserModel userModel, IdentityProviderMapperModel identityProviderMapperModel, BrokeredIdentityContext brokeredIdentityContext) {
-        updateUserGroups(keycloakSession, realmModel, userModel, identityProviderMapperModel);
+        updateUserGroups(keycloakSession, realmModel, userModel, identityProviderMapperModel, brokeredIdentityContext);
     }
 
     @Override
     public void updateBrokeredUser(KeycloakSession keycloakSession, RealmModel realmModel, UserModel userModel, IdentityProviderMapperModel identityProviderMapperModel, BrokeredIdentityContext brokeredIdentityContext) {
-        updateUserGroups(keycloakSession, realmModel, userModel, identityProviderMapperModel);
+        updateUserGroups(keycloakSession, realmModel, userModel, identityProviderMapperModel, brokeredIdentityContext);
+    }
+
+    /**
+     * Returns the Google account ID (the OIDC {@code sub}) of the user who logs in. It is the immutable
+     * Directory user ID. The email of the Keycloak user can differ from the Google account, so it is not used.
+     */
+    static String googleUserKey(BrokeredIdentityContext context) {
+        String subject = context.getId();
+        if(subject == null || subject.isBlank()) {
+            throw new RuntimeException("The identity provider returned no subject, cannot look up Google groups.");
+        }
+        return subject;
     }
 
     static GroupNameResolver resolverFor(IdentityProviderMapperModel mapperModel) {
@@ -144,11 +156,11 @@ public class GoogleGroupsIdentityProviderMapper extends AbstractIdentityProvider
                 config.get(MAPPER_MODEL_KEY_EMAIL_FILTER));
     }
 
-    private void updateUserGroups(KeycloakSession keycloakSession, RealmModel realm, UserModel user, IdentityProviderMapperModel mapperModel) {
+    private void updateUserGroups(KeycloakSession keycloakSession, RealmModel realm, UserModel user, IdentityProviderMapperModel mapperModel, BrokeredIdentityContext context) {
         GroupModel parentGroup = getParentGroup(keycloakSession, realm, mapperModel);
         GroupNameResolver resolver = resolverFor(mapperModel);
 
-        Set<String> targetGroups = resolver.resolve(googleClient.getUserGroups(user.getEmail()));
+        Set<String> targetGroups = resolver.resolve(googleClient.getUserGroups(googleUserKey(context)));
 
         HashSet<String> groupsToJoin = new HashSet<>(targetGroups);
         List<GroupModel> currentGroups = user.getGroupsStream()
